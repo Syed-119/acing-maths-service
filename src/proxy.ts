@@ -36,16 +36,55 @@ export default async function proxy(request: NextRequest) {
   const authPages = ['/login', '/signup']
   const isAuthPage = authPages.includes(request.nextUrl.pathname)
 
-  // If user is logged in and trying to access login/signup, redirect to dashboard
+  // If user is logged in and trying to access login/signup, redirect to appropriate dashboard
   if (user && isAuthPage) {
-    url.pathname = '/dashboard'
+    // Get user role
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    url.pathname = userData?.role === 'admin' ? '/dashboard' : '/student/dashboard'
     return NextResponse.redirect(url)
   }
 
-  // If user is not logged in and trying to access dashboard, redirect to login
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  // If user is not logged in and trying to access protected pages
+  if (!user && !isAuthPage && !request.nextUrl.pathname.startsWith('/email-verified') && !request.nextUrl.pathname.startsWith('/auth')) {
     url.pathname = '/login'
     return NextResponse.redirect(url)
+  }
+
+  // If user is logged in, check role-based access
+  if (user) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+    const isStudentRoute = request.nextUrl.pathname.startsWith('/student') || 
+                          request.nextUrl.pathname.startsWith('/bookings') ||
+                          request.nextUrl.pathname.startsWith('/progress')
+    
+    // Block students from admin routes
+    if (userData?.role === 'student' && isAdminRoute) {
+      url.pathname = '/student/dashboard'
+      return NextResponse.redirect(url)
+    }
+
+    // Block admins from student routes
+    if (userData?.role === 'admin' && isStudentRoute) {
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+
+    // Redirect /dashboard based on role
+    if (request.nextUrl.pathname === '/dashboard' && userData?.role === 'student') {
+      url.pathname = '/student/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
