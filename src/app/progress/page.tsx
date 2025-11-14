@@ -1,24 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getMyProgress, getPastPapers, addProgressEntry, deleteProgressEntry } from './actions'
+import { getMyProgress, deleteProgressEntry, addCustomProgressEntry } from './actions'
 import Navigation from '@/components/ui/Navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import Select from '@/components/ui/Select'
 import { formatDate, getGradeColor } from '@/lib/utils'
-import type { ProgressEntry, PastPaper } from '@/lib/types'
+import type { ProgressEntry } from '@/lib/types'
 
 export default function ProgressPage() {
   const [progressEntries, setProgressEntries] = useState<ProgressEntry[]>([])
-  const [pastPapers, setPastPapers] = useState<PastPaper[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   
   const [formData, setFormData] = useState({
-    past_paper_id: '',
+    paper_name: '',
     marks_achieved: '',
     total_marks: '',
     completed_date: new Date().toISOString().split('T')[0],
@@ -27,20 +25,12 @@ export default function ProgressPage() {
 
   useEffect(() => {
     loadProgress()
-    loadPastPapers()
   }, [])
 
   async function loadProgress() {
     const result = await getMyProgress()
     if (result.data) {
       setProgressEntries(result.data)
-    }
-  }
-
-  async function loadPastPapers() {
-    const result = await getPastPapers()
-    if (result.data) {
-      setPastPapers(result.data)
     }
   }
 
@@ -53,14 +43,14 @@ export default function ProgressPage() {
       formDataObj.append(key, value)
     })
 
-    const result = await addProgressEntry(formDataObj)
+    const result = await addCustomProgressEntry(formDataObj)
     
     if (result.error) {
       setMessage({ type: 'error', text: result.error })
     } else {
       setMessage({ type: 'success', text: result.success || 'Progress entry added!' })
       setFormData({
-        past_paper_id: '',
+        paper_name: '',
         marks_achieved: '',
         total_marks: '',
         completed_date: new Date().toISOString().split('T')[0],
@@ -84,8 +74,6 @@ export default function ProgressPage() {
       loadProgress()
     }
   }
-
-  const selectedPaper = pastPapers.find(p => p.id === formData.past_paper_id)
 
   return (
     <>
@@ -113,24 +101,11 @@ export default function ProgressPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <Select
-                  label="Select Past Paper"
-                  value={formData.past_paper_id}
-                  onChange={(e) => {
-                    const paper = pastPapers.find(p => p.id === e.target.value)
-                    setFormData({
-                      ...formData,
-                      past_paper_id: e.target.value,
-                      total_marks: paper ? paper.total_marks.toString() : ''
-                    })
-                  }}
-                  options={[
-                    { value: '', label: 'Select a paper...' },
-                    ...pastPapers.map(paper => ({
-                      value: paper.id,
-                      label: `${paper.exam_boards?.name || 'Unknown'} - ${paper.paper_name} (${paper.year})`
-                    }))
-                  ]}
+                <Input
+                  label="Paper Name"
+                  placeholder="e.g., Paper 1, Mock Exam, Practice Test"
+                  value={formData.paper_name}
+                  onChange={(e) => setFormData({ ...formData, paper_name: e.target.value })}
                   required
                 />
 
@@ -150,7 +125,7 @@ export default function ProgressPage() {
                     label="Total Marks"
                     value={formData.total_marks}
                     onChange={(e) => setFormData({ ...formData, total_marks: e.target.value })}
-                    readOnly={!!selectedPaper}
+                    min="1"
                     required
                   />
                 </div>
@@ -204,12 +179,20 @@ export default function ProgressPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-lg">
-                          {entry.past_papers?.exam_boards?.name || 'Unknown'} - {entry.past_papers?.paper_name}
+                          {entry.past_papers?.paper_name || 'Unknown Paper'}
                         </h3>
-                        <span className="text-sm text-gray-500">
-                          {entry.past_papers?.year} {entry.past_papers?.month}
-                        </span>
+                        {entry.past_papers?.year && (
+                          <span className="text-sm text-gray-500">
+                            {entry.past_papers.year} {entry.past_papers.month}
+                          </span>
+                        )}
                       </div>
+                      
+                      {entry.past_papers?.exam_boards?.name && (
+                        <p className="text-sm text-gray-600 mb-2">
+                          {entry.past_papers.exam_boards.name}
+                        </p>
+                      )}
                       
                       <div className="grid grid-cols-3 gap-4 mb-3">
                         <div>

@@ -18,7 +18,6 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     username: '',
     student_level: '',
-    phone: ''
   })
 
   useEffect(() => {
@@ -31,8 +30,7 @@ export default function ProfilePage() {
       setUser(result.data)
       setFormData({
         username: result.data.username,
-        student_level: result.data.student_level,
-        phone: result.data.phone || ''
+        student_level: result.data.student_level
       })
     }
   }
@@ -115,13 +113,7 @@ export default function ProfilePage() {
                   required
                 />
 
-                <Input
-                  label="Phone Number (Optional)"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+44 7XXX XXXXXX"
-                />
+            
 
                 <div className="flex gap-3">
                   <Button type="submit" isLoading={isLoading}>
@@ -135,7 +127,6 @@ export default function ProfilePage() {
                       setFormData({
                         username: user.username,
                         student_level: user.student_level,
-                        phone: user.phone || ''
                       })
                     }}
                   >
@@ -162,10 +153,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 
-                <div>
-                  <p className="text-sm text-gray-600">Phone Number</p>
-                  <p className="text-lg font-medium">{user.phone || 'Not provided'}</p>
-                </div>
+            
 
                 <div>
                   <p className="text-sm text-gray-600">Account Role</p>
