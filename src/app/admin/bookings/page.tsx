@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getAllBookings, updateBookingStatus } from '../availability/actions'
+import { getAllBookings, updateBookingStatus } from './actions'
 import Navigation from '@/components/ui/Navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'

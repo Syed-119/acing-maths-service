@@ -4,7 +4,7 @@ import { logout } from '@/app/logout/actions'
 import Navigation from '@/components/ui/Navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import { getAllBookings } from '@/app/admin/availability/actions'
+import { getAllBookings } from '@/app/admin/bookings/actions'
 import { formatDate, formatTime } from '@/lib/utils'
 import Link from 'next/link'
 

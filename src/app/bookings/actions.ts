@@ -6,40 +6,20 @@ import { revalidatePath } from 'next/cache'
 // Get available time slots for a specific date
 export async function getAvailableSlots(date: Date) {
   const supabase = await createClient()
-  
-  const dayOfWeek = date.getDay() // 0-6
-  
-  // Get all availability slots for this day
-  const { data: slots, error: slotsError } = await supabase
+  const dateString = date.toISOString().split('T')[0]
+
+  // New, simpler query: Find all slots for the exact date provided.
+  const { data, error } = await supabase
     .from('availability_slots')
     .select('*')
-    .eq('day_of_week', dayOfWeek)
-    .eq('is_available', true)
-  
-  if (slotsError) {
-    return { data: null, error: slotsError.message }
+    .eq('available_date', dateString)
+    .order('start_time', { ascending: true })
+
+  if (error) {
+    return { data: null, error: error.message }
   }
-  
-  // Get existing bookings for this date
-  const { data: bookings, error: bookingsError } = await supabase
-    .from('bookings')
-    .select('start_time, end_time')
-    .eq('booking_date', date.toISOString().split('T')[0])
-    .in('status', ['pending', 'confirmed'])
-  
-  if (bookingsError) {
-    return { data: null, error: bookingsError.message }
-  }
-  
-  // Filter out booked slots
-  const availableSlots = slots?.filter(slot => {
-    return !bookings?.some(booking => 
-      booking.start_time === slot.start_time && 
-      booking.end_time === slot.end_time
-    )
-  })
-  
-  return { data: availableSlots, error: null }
+
+  return { data, error: null }
 }
 
 // Create a new booking
